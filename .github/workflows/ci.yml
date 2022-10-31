@@ -20,6 +20,38 @@ on:
 env:
   ANGULAR_CLI_VERSION: 13
 jobs:
+  # Run security scans
+  scan:
+    # Configure the job 
+    name: Run security scans
+    needs: build
+    runs-on: ubuntu-latest
+
+    # Steps to run
+    steps:
+    # Set up prerequisites for tests
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v1
+    # Install node packages
+    - run: npm ci
+    
+    # DevSkim
+    # - Some CI support inbuilt tasks and scans, for  ease of use
+    # - We could install and run DevSkim directly, but we can do it more easily using the DevSkim action
+    # - See docs at: https://github.com/microsoft/DevSkim-Action 
+    - uses: microsoft/devskim-action@v1
+      with:
+        directory-to-scan: /
+        should-scan-archives: false
+        output-filename: devskim-results.sarif
+        output-directory: .devskim/output
+
+    # Publish the scan results as an artifact
+    - uses: actions/upload-artifact@v2
+      with: 
+        name: scan-results
+        path: .devskim/output
+
   lint:
     runs-on: ubuntu-latest
     steps:
@@ -446,3 +478,5 @@ jobs:
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           slack_webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  
